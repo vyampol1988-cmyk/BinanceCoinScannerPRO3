@@ -18,10 +18,11 @@ jobs:
       - name: Download repository
         uses: actions/checkout@v4
 
-      - name: Extract CoinScaner source
+            - name: Extract and fix CoinScaner source
         run: |
           unzip -q CoinScaner_v1.1_source.zip -d /tmp/coinscaner
           cp -a /tmp/coinscaner/coinscaner_work/. .
+          sed -i 's/private lateinit var scanButton$/private lateinit var scanButton: Button/' app/src/main/java/com/coinscaner/app/MainActivity.kt
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
