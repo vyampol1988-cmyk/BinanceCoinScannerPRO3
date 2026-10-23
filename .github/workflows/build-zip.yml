@@ -1,46 +1,72 @@
-name: Build CoinScaner 1.1
+name: Build Coin Scanner 1.1
 
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'CoinScaner_v1.1_source.zip'
-      - '.github/workflows/build-zip.yml'
+workflow_dispatch:
+push:
+paths:
+- 'CoinScaner_v1.1_source.zip'
+- '.github/workflows/build-zip.yml'
 
 permissions:
-  contents: read
+contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+build:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Download repository
-        uses: actions/checkout@v4
+steps:
+  - name: Download repository
+    uses: actions/checkout@v4
 
-            - name: Extract and fix CoinScaner source
-        run: |
-          unzip -q CoinScaner_v1.1_source.zip -d /tmp/coinscaner
-          cp -a /tmp/coinscaner/coinscaner_work/. .
-          sed -i 's/private lateinit var scanButton$/private lateinit var scanButton: Button/' app/src/main/java/com/coinscaner/app/MainActivity.kt
+  - name: Check source archive
+    shell: bash
+    run: |
+      set -euo pipefail
+      if [ ! -f CoinScaner_v1.1_source.zip ]; then
+        echo "ERROR: CoinScaner_v1.1_source.zip not found in repository root"
+        exit 1
+      fi
 
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+  - name: Extract and fix Coin Scanner source
+    shell: bash
+    run: |
+      set -euo pipefail
+      mkdir -p /tmp/coinscaner
+      unzip -q CoinScaner_v1.1_source.zip -d /tmp/coinscaner
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
+      PROJECT_DIR="$(find /tmp/coinscaner -type f -name settings.gradle.kts -print -quit | xargs -r dirname)"
 
-      - name: Build APK
-        run: gradle --no-daemon assembleDebug
+      if [ -z "$PROJECT_DIR" ]; then
+        echo "ERROR: Android Gradle project not found in archive"
+        find /tmp/coinscaner -maxdepth 4 -type f -print
+        exit 1
+      fi
 
-      - name: Save APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: CoinScaner-1.1-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+      echo "Project directory: $PROJECT_DIR"
+      cp -a "$PROJECT_DIR"/. .
+
+      if [ -f app/src/main/java/com/coinscaner/app/MainActivity.kt ]; then
+        sed -i 's/private lateinit var scanButton$/private lateinit var scanButton: Button/' app/src/main/java/com/coinscaner/app/MainActivity.kt
+      fi
+
+  - name: Set up Java 17
+    uses: actions/setup-java@v4
+    with:
+      distribution: temurin
+      java-version: '17'
+
+  - name: Set up Gradle
+    uses: gradle/actions/setup-gradle@v4
+    with:
+      gradle-version: '8.9'
+
+  - name: Build APK
+    run: gradle --no-daemon assembleDebug
+
+  - name: Save APK
+    uses: actions/upload-artifact@v4
+    with:
+      name: Coin-Scanner-1.1-APK
+      path: app/build/outputs/apk/debug/app-debug.apk
+      if-no-files-found: error
+      retention-days: 7
