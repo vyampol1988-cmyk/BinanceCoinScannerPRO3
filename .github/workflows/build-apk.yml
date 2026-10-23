@@ -25,11 +25,34 @@ jobs:
           gradle-version: '8.9'
 
       - name: Extract project archive
-        run: |
-          mkdir source
-          unzip -o CoinScanner_v1.1_source.zip -d source
-          find source -name settings.gradle.kts -print
-          find source -name build.gradle.kts -print
+  shell: bash
+  run: |
+  set -euo pipefail
+  
+      mkdir -p source
+
+    echo "=== ZIP archives found in repository ==="
+    find . -maxdepth 5 -type f -iname "*.zip" -print
+
+    ARCHIVE="$(find . -maxdepth 5 -type f -iname "*CoinScanner*source*.zip" -print -quit)"
+
+    if [ -z "$ARCHIVE" ]; then
+      echo "ERROR: Coin Scanner source archive not found."
+      echo "Available ZIP files:"
+      find . -maxdepth 5 -type f -iname "*.zip" -print
+      exit 1
+    fi
+
+    echo "=== Selected archive: $ARCHIVE ==="
+    unzip -o "$ARCHIVE" -d source
+
+    echo "=== Android Gradle project files ==="
+    find source -type f -name settings.gradle.kts -o -name build.gradle.kts -print
+
+    if ! find source -type f -name settings.gradle.kts -print -quit | grep -q .; then
+      echo "ERROR: settings.gradle.kts not found after extraction."
+      exit 1
+    fi
 
       - name: Build APK
         run: |
