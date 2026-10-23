@@ -3,6 +3,8 @@ name: Build Coin Scanner 1.1
 on:
 workflow_dispatch:
 push:
+branches:
+- main
 paths:
 - 'CoinScaner_v1.1_source.zip'
 - '.github/workflows/build-zip.yml'
@@ -24,6 +26,8 @@ steps:
       set -euo pipefail
       if [ ! -f CoinScaner_v1.1_source.zip ]; then
         echo "ERROR: CoinScaner_v1.1_source.zip not found in repository root"
+        echo "ZIP files in repository:"
+        find . -maxdepth 3 -type f -iname "*.zip"
         exit 1
       fi
 
@@ -37,8 +41,8 @@ steps:
       PROJECT_DIR="$(find /tmp/coinscaner -type f -name settings.gradle.kts -print -quit | xargs -r dirname)"
 
       if [ -z "$PROJECT_DIR" ]; then
-        echo "ERROR: Android Gradle project not found in archive"
-        find /tmp/coinscaner -maxdepth 4 -type f -print
+        echo "ERROR: settings.gradle.kts not found in archive"
+        find /tmp/coinscaner -maxdepth 5 -type f -print
         exit 1
       fi
 
